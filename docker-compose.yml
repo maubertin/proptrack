@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  dgraph-zero:
+    image: dgraph/dgraph:v23.1.1
+    container_name: proptrack-zero
+    restart: unless-stopped
+    volumes:
+      - ./data/dgraph/zero:/dgraph
+    ports:
+      - "5080:5080"
+      - "6080:6080"
+    command: dgraph zero --my=dgraph-zero:5080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  dgraph-alpha:
+    image: dgraph/dgraph:v23.1.1
+    container_name: proptrack-alpha
+    restart: unless-stopped
+    volumes:
+      - ./data/dgraph/alpha:/dgraph
+    ports:
+      - "8080:8080"
+      - "9080:9080"
+    command: >
+      dgraph alpha
+      --my=dgraph-alpha:7080
+      --zero=dgraph-zero:5080
+      --security whitelist=0.0.0.0/0
+    depends_on:
+      dgraph-zero:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  proptrack:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: proptrack-api
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    env_file:
+      - .env
+    depends_on:
+      dgraph-alpha:
+        condition: service_healthy
+    environment:
+      - DGRAPH_ALPHA_HOST=dgraph-alpha
+      - DGRAPH_ALPHA_PORT=9080
+
+networks:
+  default:
+    name: proptrack-net
