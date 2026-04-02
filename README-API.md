@@ -11,6 +11,7 @@ key unlocks, how to obtain it, and the exact environment variable to add to your
 Pour démarrer sans coût : active uniquement AIS_STREAM_API_KEY (gratuit) + MYSHIPTRACKING_API_KEY (trial gratuit 10 jours). Le GET /health indique quelles sources sont actives.
 
 
+
 ```env
 # ── MarineTraffic web scraper (no key — enabled by default) ──────────────────
 MT_SCRAPER_ENABLED=true
